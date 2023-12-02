@@ -16,4 +16,6 @@ public interface TaskInputBoundary {
     List<TaskDtoModel> getTasksByCardId(Long id);
     TaskDtoModel updateTask(TaskUpdateModel taskUpdateModel);
     TaskDtoModel deleteTask(Long id);
+    void removeUserFromTasks(Long id);
+    void deleteTasksByCard(Long id);
 }

@@ -1,5 +1,6 @@
 package com.superngb.taskservice.model;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.util.Date;
@@ -11,6 +12,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class TaskUpdateModel {
+    @NotNull
     private Long id;
     private String name;
     private String description;

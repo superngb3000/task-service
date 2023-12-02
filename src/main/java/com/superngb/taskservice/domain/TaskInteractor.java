@@ -1,5 +1,7 @@
 package com.superngb.taskservice.domain;
 
+import com.superngb.taskservice.client.CardServiceClient;
+import com.superngb.taskservice.client.UserServiceClient;
 import com.superngb.taskservice.entity.Task;
 import com.superngb.taskservice.model.TaskDtoModel;
 import com.superngb.taskservice.model.TaskPostModel;
@@ -7,7 +9,6 @@ import com.superngb.taskservice.model.TaskUpdateModel;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -18,27 +19,34 @@ public class TaskInteractor implements TaskInputBoundary{
 
     private final TaskDataAccess taskDataAccess;
     private final TaskOutputBoundary taskOutputBoundary;
+    private final UserServiceClient userServiceClient;
+    private final CardServiceClient cardServiceClient;
 
-    public TaskInteractor(TaskDataAccess taskDataAccess, TaskOutputBoundary taskOutputBoundary) {
+    public TaskInteractor(TaskDataAccess taskDataAccess,
+                          TaskOutputBoundary taskOutputBoundary,
+                          UserServiceClient userServiceClient,
+                          CardServiceClient cardServiceClient) {
         this.taskDataAccess = taskDataAccess;
         this.taskOutputBoundary = taskOutputBoundary;
+        this.userServiceClient = userServiceClient;
+        this.cardServiceClient = cardServiceClient;
     }
 
-    //TODO проверка на существование card (запрос в card-service)
-    //TODO проверка на существование creator и users (запрос в user-service)
     @Override
     public TaskDtoModel createTask(TaskPostModel taskPostModel) {
-        if (taskPostModel == null ||
-                taskPostModel.getName() == null ||
-                taskPostModel.getDescription() == null ||
-                taskPostModel.getDeadline() == null ||
-                taskPostModel.getCardId() == null ||
-                taskPostModel.getCreatorId() == null ||
-                taskPostModel.getUsersId() == null) {
+        if (!userServiceClient.userExists(taskPostModel.getCreatorId())) {
             return taskOutputBoundary.prepareFailPostTaskView();
         }
-        if (!taskPostModel.getUsersId().contains(taskPostModel.getCreatorId())){
-            taskPostModel.setUsersId(new ArrayList<>(List.of(taskPostModel.getCreatorId())));
+        if (!userServiceClient.userExists(taskPostModel.getCardId())) {
+            return taskOutputBoundary.prepareFailPostTaskView();
+        }
+        List<Long> usersId = new ArrayList<>(taskPostModel.getUsersId().stream()
+                .filter(u -> u != null && userServiceClient.userExists(u))
+                .sorted()
+                .distinct()
+                .toList());
+        if (!usersId.contains(taskPostModel.getCreatorId())) {
+            usersId.add(taskPostModel.getCreatorId());
         }
         return taskOutputBoundary.prepareSuccessPostTaskView(TaskDtoModel.mapper(
                 taskDataAccess.save(Task.builder()
@@ -75,8 +83,6 @@ public class TaskInteractor implements TaskInputBoundary{
         return taskOutputBoundary.convertUser(TaskDtoModel.mapper(taskDataAccess.findByCardId(id)));
     }
 
-    //TODO проверка на существование card (запрос в card-service)
-    //TODO проверка на существование creator и users (запрос в user-service)
     @Override
     public TaskDtoModel updateTask(TaskUpdateModel taskUpdateModel) {
         Task taskById = taskDataAccess.findById(taskUpdateModel.getId());
@@ -86,9 +92,13 @@ public class TaskInteractor implements TaskInputBoundary{
         updateFieldIfNotNull(taskUpdateModel.getName(), taskById::getName, taskById::setName);
         updateFieldIfNotNull(taskUpdateModel.getDescription(), taskById::getDescription, taskById::setDescription);
         updateFieldIfNotNull(taskUpdateModel.getDeadline(), taskById::getDeadline, taskById::setDeadline);
-        updateFieldIfNotNull(taskUpdateModel.getCardId(), taskById::getCardId, taskById::setCardId);
+        Long cardId = taskUpdateModel.getCardId();
+        if (cardId != null && cardServiceClient.cardExists(cardId)
+                && (taskById.getCardId() == null || !taskById.getCardId().equals(cardId))) {
+            taskById.setCardId(cardId);
+        }
         List<Long> usersId = new ArrayList<>(taskUpdateModel.getUsersId().stream()
-                .filter(Objects::nonNull)
+                .filter(u -> u != null && userServiceClient.userExists(u))
                 .sorted()
                 .distinct()
                 .toList());
@@ -109,5 +119,21 @@ public class TaskInteractor implements TaskInputBoundary{
         return (task == null)
                 ? taskOutputBoundary.prepareFailDeleteTaskView()
                 : taskOutputBoundary.prepareSuccessDeleteTaskView(TaskDtoModel.mapper(task));
+    }
+
+    @Override
+    public void removeUserFromTasks(Long id) {
+        List<Task> taskList = taskDataAccess.findByUserId(id);
+        taskList.forEach(task -> {
+            List<Long> usersId= task.getUsersId();
+            usersId.remove(id);
+            task.setUsersId(usersId);
+            taskDataAccess.save(task);
+        });
+    }
+
+    @Override
+    public void deleteTasksByCard(Long id) {
+        taskDataAccess.findByCardId(id).forEach(task -> taskDataAccess.deleteById(task.getId()));
     }
 }
