@@ -5,10 +5,13 @@ import com.superngb.taskservice.model.TaskDtoModel;
 import com.superngb.taskservice.model.TaskPostModel;
 import com.superngb.taskservice.model.TaskUpdateModel;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+//TODO переделать все на ResponseEntity
 @RestController
 @RequestMapping("/")
 public class TaskController {
@@ -24,9 +27,18 @@ public class TaskController {
         return taskInputBoundary.createTask(model);
     }
 
+
+//    @GetMapping("/{id}")
+//    public TaskDtoModel getTask(@PathVariable Long id) {
+//        return taskInputBoundary.getTask(id);
+//    }
+
     @GetMapping("/{id}")
-    public TaskDtoModel getTask(@PathVariable Long id) {
-        return taskInputBoundary.getTask(id);
+    public ResponseEntity<?> getTask(@PathVariable Long id) {
+        TaskDtoModel body = taskInputBoundary.getTask(id);
+        return body == null
+                ? new ResponseEntity<>(HttpStatus.NOT_FOUND)
+                : new ResponseEntity<>(body, HttpStatus.OK);
     }
 
     @GetMapping
@@ -55,12 +67,12 @@ public class TaskController {
     }
 
     @PatchMapping("/removeUser/{id}")
-    void removeUserFromTasks(@PathVariable Long id){
+    void removeUserFromTasks(@PathVariable Long id) {
         taskInputBoundary.removeUserFromTasks(id);
     }
 
     @DeleteMapping("/deleteByCard/{id}")
-    void deleteTasksByCard(@PathVariable Long id){
+    void deleteTasksByCard(@PathVariable Long id) {
         taskInputBoundary.deleteTasksByCard(id);
     }
 }

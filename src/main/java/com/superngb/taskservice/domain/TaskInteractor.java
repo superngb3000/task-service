@@ -15,7 +15,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 @Service
-public class TaskInteractor implements TaskInputBoundary{
+public class TaskInteractor implements TaskInputBoundary {
 
     private final TaskDataAccess taskDataAccess;
     private final TaskOutputBoundary taskOutputBoundary;
@@ -40,13 +40,17 @@ public class TaskInteractor implements TaskInputBoundary{
         if (!userServiceClient.userExists(taskPostModel.getCardId())) {
             return taskOutputBoundary.prepareFailPostTaskView();
         }
-        List<Long> usersId = new ArrayList<>(taskPostModel.getUsersId().stream()
-                .filter(u -> u != null && userServiceClient.userExists(u))
-                .sorted()
-                .distinct()
-                .toList());
-        if (!usersId.contains(taskPostModel.getCreatorId())) {
+        List<Long> usersId;
+        if (taskPostModel.getUsersId() != null) {
+            usersId = taskPostModel.getUsersId();
             usersId.add(taskPostModel.getCreatorId());
+            usersId = usersId.stream()
+                    .filter(u -> u != null && userServiceClient.userExists(u))
+                    .sorted()
+                    .distinct()
+                    .toList();
+        } else {
+            usersId = new ArrayList<>(List.of(taskPostModel.getCreatorId()));
         }
         return taskOutputBoundary.prepareSuccessPostTaskView(TaskDtoModel.mapper(
                 taskDataAccess.save(Task.builder()
@@ -55,7 +59,7 @@ public class TaskInteractor implements TaskInputBoundary{
                         .deadline(taskPostModel.getDeadline())
                         .cardId(taskPostModel.getCardId())
                         .creatorId(taskPostModel.getCreatorId())
-                        .usersId(taskPostModel.getUsersId())
+                        .usersId(usersId)
                         .build())
         ));
     }
@@ -125,7 +129,7 @@ public class TaskInteractor implements TaskInputBoundary{
     public void removeUserFromTasks(Long id) {
         List<Task> taskList = taskDataAccess.findByUserId(id);
         taskList.forEach(task -> {
-            List<Long> usersId= task.getUsersId();
+            List<Long> usersId = task.getUsersId();
             usersId.remove(id);
             task.setUsersId(usersId);
             taskDataAccess.save(task);

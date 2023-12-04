@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+//TODO пееределать под ResponseModel
 @Component
 public interface TaskInputBoundary {
     TaskDtoModel createTask(TaskPostModel taskPostModel);

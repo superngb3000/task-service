@@ -1,21 +1,21 @@
 # Используем официальный образ OpenJDK 11
-FROM openjdk:11
+FROM maven:3.6.3-openjdk-17
 # Устанавливаем рабочую директорию внутри контейнера
 WORKDIR /app
 # Копируем файлы Maven для ускорения сборки зависимостей
-COPY ./task-service/pom.xml ./pom.xml
+COPY ./pom.xml ./pom.xml
 # Собираем зависимости приложения (этот шаг используется для кэширования зависимостей)
 RUN ["mvn", "dependency:go-offline"]
 # Копируем исходный код проекта
-COPY ./task-service/src ./src
+COPY ./src ./src
 # Собираем приложение
 RUN ["mvn", "package", "-DskipTests"]
 
 # Временный контейнер для сборки приложения
-FROM openjdk:11-jre
+FROM openjdk:17-jdk
 # Копируем собранный JAR-файл из предыдущего контейнера
 COPY --from=0 /app/target/*.jar /app/app.jar
 # Указываем, какой порт будем использовать
-EXPOSE 8082
+EXPOSE 8084
 # Команда для запуска приложения при старте контейнера
 CMD ["java", "-jar", "/app/app.jar"]
