@@ -8,9 +8,14 @@ import java.util.List;
 @Component
 public interface TaskDataAccess {
     Task save(Task task);
+
     Task findById(Long id);
+
     List<Task> findByUserId(Long id);
+
     List<Task> findByCardId(Long id);
+
     List<Task> getTasks();
+
     Task deleteById(Long id);
 }

@@ -1,7 +1,7 @@
 package com.superngb.taskservice.controller;
 
 import com.superngb.taskservice.domain.TaskInputBoundary;
-import com.superngb.taskservice.model.TaskDtoModel;
+import com.superngb.taskservice.model.ResponseModel;
 import com.superngb.taskservice.model.TaskPostModel;
 import com.superngb.taskservice.model.TaskUpdateModel;
 import jakarta.validation.Valid;
@@ -9,9 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 
-//TODO переделать все на ResponseEntity
 @RestController
 @RequestMapping("/")
 public class TaskController {
@@ -23,56 +21,56 @@ public class TaskController {
     }
 
     @PostMapping
-    public TaskDtoModel postTask(@RequestBody @Valid TaskPostModel model) {
-        return taskInputBoundary.createTask(model);
+    public ResponseEntity<?> postTask(@RequestBody @Valid TaskPostModel model) {
+        ResponseModel<?> response = taskInputBoundary.createTask(model);
+        return new ResponseEntity<>(response.getBody(), HttpStatus.valueOf(response.getCode()));
     }
-
-
-//    @GetMapping("/{id}")
-//    public TaskDtoModel getTask(@PathVariable Long id) {
-//        return taskInputBoundary.getTask(id);
-//    }
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getTask(@PathVariable Long id) {
-        TaskDtoModel body = taskInputBoundary.getTask(id);
-        return body == null
-                ? new ResponseEntity<>(HttpStatus.NOT_FOUND)
-                : new ResponseEntity<>(body, HttpStatus.OK);
+        ResponseModel<?> response = taskInputBoundary.getTask(id);
+        return new ResponseEntity<>(response.getBody(), HttpStatus.valueOf(response.getCode()));
     }
 
     @GetMapping
-    public List<TaskDtoModel> getTasks() {
-        return taskInputBoundary.getTasks();
+    public ResponseEntity<?> getTasks() {
+        ResponseModel<?> response = taskInputBoundary.getTasks();
+        return new ResponseEntity<>(response.getBody(), HttpStatus.valueOf(response.getCode()));
     }
 
     @GetMapping("/user/{id}")
-    public List<TaskDtoModel> getTasksByUserId(@PathVariable Long id) {
-        return taskInputBoundary.getTasksByUserId(id);
+    public ResponseEntity<?> getTasksByUserId(@PathVariable Long id) {
+        ResponseModel<?> response = taskInputBoundary.getTasksByUserId(id);
+        return new ResponseEntity<>(response.getBody(), HttpStatus.valueOf(response.getCode()));
     }
 
     @GetMapping("/card/{id}")
-    public List<TaskDtoModel> getTasksByCardId(@PathVariable Long id) {
-        return taskInputBoundary.getTasksByCardId(id);
+    public ResponseEntity<?> getTasksByCardId(@PathVariable Long id) {
+        ResponseModel<?> response = taskInputBoundary.getTasksByCardId(id);
+        return new ResponseEntity<>(response.getBody(), HttpStatus.valueOf(response.getCode()));
     }
 
     @PutMapping
-    public TaskDtoModel updateTask(@RequestBody @Valid TaskUpdateModel model) {
-        return taskInputBoundary.updateTask(model);
+    public ResponseEntity<?> updateTask(@RequestBody @Valid TaskUpdateModel model) {
+        ResponseModel<?> response = taskInputBoundary.updateTask(model);
+        return new ResponseEntity<>(response.getBody(), HttpStatus.valueOf(response.getCode()));
     }
 
     @DeleteMapping("/{id}")
-    public TaskDtoModel deleteTask(@PathVariable Long id) {
-        return taskInputBoundary.deleteTask(id);
+    public ResponseEntity<?> deleteTask(@PathVariable Long id) {
+        ResponseModel<?> response = taskInputBoundary.deleteTask(id);
+        return new ResponseEntity<>(response.getBody(), HttpStatus.valueOf(response.getCode()));
     }
 
     @PatchMapping("/removeUser/{id}")
-    void removeUserFromTasks(@PathVariable Long id) {
-        taskInputBoundary.removeUserFromTasks(id);
+    public ResponseEntity<?> removeUserFromTasks(@PathVariable Long id) {
+        ResponseModel<?> response = taskInputBoundary.removeUserFromTasks(id);
+        return new ResponseEntity<>(response.getBody(), HttpStatus.valueOf(response.getCode()));
     }
 
     @DeleteMapping("/deleteByCard/{id}")
-    void deleteTasksByCard(@PathVariable Long id) {
-        taskInputBoundary.deleteTasksByCard(id);
+    public ResponseEntity<?> deleteTasksByCard(@PathVariable Long id) {
+        ResponseModel<?> response = taskInputBoundary.deleteTasksByCard(id);
+        return new ResponseEntity<>(response.getBody(), HttpStatus.valueOf(response.getCode()));
     }
 }

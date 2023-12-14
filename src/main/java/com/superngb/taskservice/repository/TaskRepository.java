@@ -8,5 +8,6 @@ import java.util.Optional;
 
 public interface TaskRepository extends JpaRepository<Task, Long> {
     Optional<List<Task>> findAllByUsersId(Long id);
+
     Optional<List<Task>> findAllByCardId(Long id);
 }
